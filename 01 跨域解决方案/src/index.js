@@ -16,6 +16,7 @@ function startApiServer({ port, enableCors }) {
   const app = new Koa();
   const router = new Router();
 
+  
   if (enableCors) {
     app.use(async (ctx, next) => {
       const origin = ctx.get('Origin'); 
