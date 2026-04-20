@@ -1,0 +1,66 @@
+<!doctype html>
+<html lang="zh-CN">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>跨域练习</title>
+    <style>
+      body { font-family: system-ui, -apple-system, Segoe UI, Roboto, Arial; padding: 16px; }
+      button { margin-right: 8px; margin-bottom: 8px; }
+      pre { background: #111; color: #ddd; padding: 12px; border-radius: 8px; overflow: auto; }
+      code { color: #7ee787; }
+    </style>
+  </head>
+  <body>
+    <h2>跨域练习页面</h2>
+
+    <div>
+      <button id="btn-same">同源请求 /api/ping</button>
+      <button id="btn-cross">跨域请求 API(3000) /api/ping</button>
+      <button id="btn-proxy">请求代理(4000) /api/ping</button>
+    </div>
+
+    <p>
+      当前页面 origin：<code id="origin"></code>
+    </p>
+
+    <p id="hint" style="color: #b42318;"></p>
+
+    <pre id="out">点击按钮发起请求...</pre>
+
+    <script>
+      const out = document.getElementById('out');
+      const originEl = document.getElementById('origin');
+      const hintEl = document.getElementById('hint');
+      originEl.textContent = location.origin;
+
+      const isSameServer = location.port === '5000';
+      if (!isSameServer) {
+        hintEl.textContent = `你当前是从 ${location.origin} 打开的。要验证“同源请求”，请用 http://localhost:5000/index.html 打开页面（不要用 Live Server 5500）。`;
+        document.getElementById('btn-same').disabled = true;
+      }
+
+      function log(obj) {
+        out.textContent = typeof obj === 'string' ? obj : JSON.stringify(obj, null, 2);
+      }
+
+      async function request(url) {
+        try {
+          const res = await fetch(url);
+          const data = await res.json();
+          log({ url, status: res.status, data });
+        } catch (err) {
+          log(String(err));
+        }
+      }
+
+      document.getElementById('btn-same').onclick = () => request('/api/ping');
+
+      // 写完整的origin（即http://localhost:3000），目的是为了实现跨域，因为这个事件触发是在5000端口，而api在3000端口
+      document.getElementById('btn-cross').onclick = () => request('http://localhost:3000/api/ping');
+
+      
+      document.getElementById('btn-proxy').onclick = () => request('http://localhost:4000/api/ping');
+    </script>
+  </body>
+</html>

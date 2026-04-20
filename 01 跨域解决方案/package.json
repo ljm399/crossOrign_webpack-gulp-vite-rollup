@@ -1,0 +1,18 @@
+{
+  "name": "cors-solutions-demo",
+  "version": "1.0.0",
+  "private": true,
+  "type": "commonjs",
+  "scripts": {
+    "start:same": "node ./src/index.js --mode=same",
+    "start:api": "node ./src/index.js --mode=api",
+    "start:api-cors": "node ./src/index.js --mode=api-cors",
+    "start:client": "node ./client/server.js",
+    "start:proxy": "node ./proxy/index.js"
+  },
+  "dependencies": {
+    "koa": "^3.1.2",
+    "koa-router": "^14.0.0",
+    "koa-static": "^5.0.0"
+  }
+}
