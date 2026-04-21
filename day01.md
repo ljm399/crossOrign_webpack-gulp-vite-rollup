@@ -362,6 +362,60 @@ app.listen(port, () => {
 
 # 二。webpack的基本回顾
 
+- 使用npx webpack
+  - 而不是直接webpack
+    - 这会直接去全家里面找webpack
+    - npx webpack则取node_modules里面找
+    - 还有package.json的script不用加npx，因为它也会直接去node_modules里面找
+      - srcipt：{ ‘webpack’：‘webpack’}   不用加npx
+
+- 基于node
+
+  - 所以要是使用commonjs
+
+- npm init
+
+- webpack.config.js
+
+  - ```js
+    const path = require('path');
+    module.exports = {
+        mode: 'none',
+        entry: './src/index.js',
+        output: {
+            filename: 'bundle.js',
+            path: path.resolve(__dirname, 'dist')
+        }
+    };
+    ```
+
+    - 作用
+
+      - `entry`：打包入口（从这个文件开始分析依赖）
+      - `output.path`：打包产物输出目录
+      - `output.filename`：打包产物文件名（例如 `bundle.js`）
+
+    - 注意
+
+      - 打包成 `bundle.js` 只是“产物文件名变了/模块被打到一个文件里”，并不等于“隐藏源码”。
+      - 浏览器里是否能看到源码、以及调试体验，主要取决于是否开启 `devtool`（是否生成 source-map）以及是否压缩（production 默认会压缩）。
+
+
+  - mode
+
+    - `none`
+      - 不启用 `development`/`production` 的默认优化与默认配置（很多东西需要你手动配）
+
+    - `development`
+      - 偏向开发体验：构建更快、便于调试；通常不压缩，配合更友好的 source-map。
+
+    - `production`（默认）
+      - 偏向线上体积/性能：默认开启压缩（minimize）和多种优化（例如更激进的优化策略）。
+
+    - development 和 production 常见差异点
+      - 更常用的环境判断是 `process.env.NODE_ENV`（而不是 `process.config.mode`）。
+      - 是否压缩、是否做优化（例如 tree-shaking 相关优化的默认策略）不同。
+
 
 
 
@@ -370,25 +424,162 @@ app.listen(port, () => {
 
 ## 3.1.认识source-map的作用
 
+- source-map是什么
+
+  - 本质：一份“映射关系文件”，把“打包/压缩后的代码位置(行/列)”映射回“源代码位置”。
+  - 目的：
+
+    - 浏览器报错堆栈能定位到 `src/...`
+    - 断点可以打在源文件上
+
+- 没有 source-map 的痛点
+
+  - 报错只指向 `dist/bundle.js`，行号对不上源码，难定位报错点。
+
+- webpack 怎么开
+
+  - 示例
+
+    - ```js
+      // webpack.config.js
+      module.exports = {
+        mode: 'development',//其他属性也可以
+        devtool: 'source-map'
+      };
+      ```
 
 
-## 3.2.source-map文件分析
 
+## 3.2.source-map文件分析产物一般长这样
 
+- - `dist/bundle.js`
+  - `dist/bundle.js.map`
+  
+- 关联方式（当有多个source-map文件时，靠bundle.js末尾注释定位映射的source-map）
 
-## 3.3.source-map常见值
+  - `bundle.js` 末尾会有：
 
+    - ```js
+      //# sourceMappingURL=bundle.js.map
+      ```
 
+  - DevTools 看到它，就会去加载 `.map` 文件。
 
-## 3.4.source-map不常见值
+- `.map`文件（即打包后的source-map文件）里常见字段（99%不会修改，所以了解就行））
+
+  - `sources`：源文件路径列表
+  - `sourcesContent`：源文件内容（有些模式会带）
+  - `names`：变量/函数名映射相关
+  - `mappings`：最核心的映射数据：使用 **Base64 VLQ + 差分编码**压缩存储，所以看起来像 `;AAAA;AACA...`。
+  - sourceRoot：在控制台时source-map的上面文件下呢，没值就是根目录即sourceRoot下的文件
+
+- 你在浏览器里能看到什么
+
+  - f12 -> source 
+  - 有两个文件，top和source-map，看报错问题和定位就在source-map看
+  
+  - 要是没有source-map，那就点击f12找到对应的js和css源代码映射
+  
+  
+
+## 3.3.source-map常见值（知道eval和source-map就行）
+
+- 设置不同值，目的为了性能优化
+- 记忆思路
+
+  - 精度：`cheap` 通常只到“行”，不含“列”
+  - 速度：`eval` 通常更快（适合开发）
+- 常见取值
+
+  - `false`
+    - 不生成 source-map
+  - none 
+    - 在production才生效，某个不被允许
+  - `source-map` 
+    - 推荐在production使用
+    - 缺点
+    - 独立 `.map` 文件
+    - 优点：定位最准确（行/列级别）
+    - 缺点：构建慢、map 大
+  - elva
+    - 在development使用
+    - 优点
+      - 构建速度快
+      - 但定位不怎么准确
+
+## 3.4.source-map不常见值（了解）
+
+- `eval-source-map`
+
+  - 没有source-map文件，source-map文件内容以eval函数合并到bundle.js文件里面
+    - eval函数
+  - 优点：速度快、定位也比较准确
+  - 缺点：产物包含 `eval`，不适合生产
+
+- `inline-source-map`
+
+  - 和eval-source-map一样 直接内联到 `bundle.js`（base64）
+  - 优点：不用额外请求 `.map`
+  - 缺点：bundle 体积大
+
+- `cheap-module-source-map`
+
+  - 只能定位到第几行报错，而不能定位到第几个字符
+
+    - 在控制台的source-map文件下看，而不是控制台，现在控制台只显示几行，第几个字符不显示了，但source-map显示
+
+  - 特点：速度/精度平衡，能更友好地映射回经过 loader 处理前的源文件
+
+  - 只适用于development
+
+  - 示例
+
+  - ```js
+    module.exports = {
+      mode: 'development',
+      devtool: 'cheap-module-source-map'
+    };
+    ```
+
+- `hidden-source-map`
+  - 生成 `.map`，但 `bundle.js` 里不写 `sourceMappingURL`
+    - 即默认不会引用map，是否引用看你自己
+  - 常见用途：线上把 `.map` 上传到错误监控平台，但不让浏览器自动加载
+  
+- `nosources-source-map`
+  - 有映射，但不包含 `sourcesContent`
+  - 用途：让你定位到源文件的行号，但不把源码内容直接暴露出去
+  
+- 注意
+
+  - “不暴露源码”不只看 `devtool`，还要看线上是否能访问到 `.map` 文件。
 
 
 
 ## 3.5.source-map最佳实践
 
-- 开发阶段：source-map/cheap-module-source-map
-- 生产阶段：source-map/cheap-module-source-map
-- 线上阶段：false/none
+- 开发（调试体验/速度）
+  - `eval`
+
+- 生产构建（需要还原问题）
+  - `source-map`（准确但体积大）
+
+- 真正线上发布（体积/安全）
+  - `false`
+  - 或 `hidden-source-map` / `nosources-source-map`（配合错误平台）
+
+- 一个常见配置例子
+
+  - ```js
+    // webpack.config.js
+    module.exports = (env, argv) => {
+      const isProd = argv.mode === 'production';
+      return {
+        mode: isProd ? 'production' : 'development',
+        devtool: isProd ? false : 'eval'
+      };
+    };
+    ```
 
 
 
@@ -396,14 +587,114 @@ app.listen(port, () => {
 
 ## 4.1.babel的作用
 
+- babel 是什么
+
+  - JS 编译器：把“新语法/新特性代码”转换为“目标环境能运行的代码”。
+    - 现在浏览器一般都支持es6，只是为了兼顾老浏览
+
+- 主要解决两类兼容问题
+
+  - 语法（syntax）
+    - 例：箭头函数、class、可选链 `?.`、空值合并 `??`
+
+  - API（polyfill）
+    - 例：`Promise`、`Array.prototype.includes`
+    - 这种不只是“语法转换”，需要 polyfill 方案（常用 `core-js`）
+
+- 和 webpack 的分工
+
+  - webpack：打包、处理模块依赖
+  - babel：把代码转成“目标浏览器/Node”能跑的代码
+
 
 
 ## 4.2.babel命令行
 
+### 4.2.1. babel安装
+
+- npm i -D @babel/core @babel/cli
+- npx babel
+  - 因为要是babel -v 则去全局找
+- 安装某个转换插件
+  - npm i @babel/plugin-transform-arrow-functions
+
+缺点：babel安装需要安装不同插件，然后才能转换的问题
+
+解决：预处理
+
+
+
+### 4.2.2.预处理
+
 - plugin
 - preset
+
+- `plugin` vs `preset`
+
+  - `plugin`：单个转换规则
+  - `preset`：一组 plugin 的集合（最常用：`@babel/preset-env`）
+
+- 命令行最小安装
+
+  - ```bash
+    npm i -D @babel/core @babel/cli @babel/preset-env
+    ```
+
+- 最小配置
+
+  - `.babelrc`（或 `babel.config.json`）
+
+    - ```json
+      {
+        "presets": [
+          ["@babel/preset-env", { "targets": "> 0.25%, not dead" }]
+        ]
+      }
+      ```
+
+- 编译命令
+
+  - ```bash
+    npx babel src --out-dir lib
+    ```
+
+- 一个“转换前后”示例
+
+  - `src/index.js`
+
+    - ```js
+      const add = (a, b) => a + b;
+      ```
+
+  - 输出（可能变成）
+
+    - ```js
+      "use strict";
+      
+      var add = function add(a, b) {
+        return a + b;
+      };
+      ```
 
 
 
 ## 4.3.babel底层原理
+
+- babel 核心：AST（抽象语法树）
+
+  - parse：源码字符串 -> AST
+  - transform：遍历 AST，应用 plugin/preset 做转换
+  - generate：AST -> 新代码
+
+- 最小示意（理解用）
+
+  - ```js
+    const { transformSync } = require('@babel/core');
+    
+    const { code } = transformSync('const add = (a,b)=>a+b', {
+      presets: [['@babel/preset-env', { targets: 'defaults' }]]
+    });
+    
+    console.log(code);
+    ```
 
