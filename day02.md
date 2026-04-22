@@ -854,37 +854,217 @@ export const add = ...
 
 # 二。 webpack的server
 
-## 2.1.webpack-dev-server
+## 2.1.搭建webpack本地服务器：webpack-dev-server
 
+- 本地没有创建任何文件，而是将运行代码放在内存中，所以运行效率高
+  - 因为不放文件中，省去了文件读取步骤
 
+- 安装命令
 
+  - ```
+    npm i webpack-dev-server -D
+    ```
 
+- package.json配置
 
-## 2.2. 其他配置信息
+  - "serve": 'webpack server '  
+    - 可以自定义配置文件，而不是只能在webpack.config.js
+    - "serve": 'webpack server --config wk.config.js'
+
+## 2.2. devServer其他配置信息
 
 - static配置
+
+  - 作用：启动webpack服务器后项目中index.html中静态资源写法更简洁
+  - webpack.config.js
+
+    ```js
+    devServer:{
+    	static:['public','content'] // 默认值时public
+    }
+    ```
+
+    则 index.html
+
+    ```js
+    前提条件：静态资源(如abc.js)在public或刚刚配置的content目录下（public，index.html和src并列）
+    <script src=”./abc"> -- 不用加public或content，其自动会去那里找
+    ```
+
+    
+
 - 额外配置：
   - host
+    - 域名
+      - 一般127.0.0.1
+      - 当你给同事也可以看到你本地服务器就可以开启 0.0.0.0
+        - 同事wift和你在一个wift下或同一个ipv4下
+        - 你电脑ipv4是198.168.10.15
+        - 同事访问198.168.10.15:9000 就可以看到你的代码了
   - port
+    - 端口比如9000
   - compress
+    - true 压缩
+    - 静态资源不会压缩
 
 
 
-## 2.3.proxy配置
+## 2.3.devServer里面proxy配置
+
+- 只在开发阶段使用，用于测试和解决跨域问题
 
 - vue/react项目时，基本都会配置
-- changeOrign：true
+
+  - 注意只要修改了webpage.config.js,那么就要重新启动webpack服务
+  - ```javascript
+    devServer: {
+        host: '0.0.0.0',
+        compress: true,
+        port: 9000,
+        open: true,
+        proxy: [ -- 注意devServer.proxy是个数组
+            {
+                context: ['/api'],
+                target: 'http://localhost:8000',
+                // changeOrigin: true,
+                pathRewrite: {
+                    '^/api': ''
+                }
+            }
+        ]
+      }
+    },
+        
+    ---- index.js
+    axios.get('api/test').then ---- 一定要写api/，否则匹配不到上面的api就不能实现跨域
+    ```
+  
+    
+  - 实现原理：浏览器请求先发给 `webpack-dev-server`（它本身就是一个本地 Node HTTP 服务），再由它把请求转发到 `target` 指定的后端服务器
+    - 这不是“额外再开启一个本地 Node 服务”，而是 `webpack-dev-server` 自己在做反向代理
+    - 一般可以理解为两端：
+      - webpack-dev-server（本地开发服务器 + proxy）
+      - 后端服务器、
+  
+    - 进一步解释
+  
+      #### 1) 关于 webpack-dev-server “代码住不住在服务器里”
+      这部分你说得**基本对**：
+  
+      - `webpack-dev-server` 的主要作用之一是：
+        - **把构建产物放在内存里**
+        - **提供 HMR / 自动刷新**
+        - **让你开发时能实时看到变化**
+      - **它不是“把你的业务代码部署到一台远程服务器上”，而是本机起一个开发 HTTP 服务来提供资源。**
+  
+      小纠正：你说“代码只是运行在里面”这句容易引起误解。更准确是：
+  
+      - **JS 源码最终还是在浏览器里执行**（页面逻辑、发起 Ajax/fetch 的代码都在浏览器执行）
+      - `webpack-dev-server` 主要负责“把资源（bundle、HMR、静态文件）提供给浏览器 + 提供代理转发能力”
+  
+      #### 2) 关于 “它怎么实现跨域”
+      **不是“你的代码调用 dev-server 去远程拿数据”**，而是“浏览器请求先打到 dev-server，dev-server 再转发”。
+  
+      更准确的链路是：
+  
+      - **浏览器里的前端代码**发请求：`fetch('/api/user')`
+      - 浏览器会把它请求到**当前页面同源**：`http://localhost:9000/api/user`
+      - `webpack-dev-server` 收到这个请求后，根据 `devServer.proxy`：
+        - **转发**到远程/后端：比如 `http://backend.com/user`（可能还会 `pathRewrite`）
+      - 后端返回数据给 dev-server
+      - dev-server 再把数据返回给浏览器
+  
+      所以跨域“被解决”的根本原因是：
+  
+      - 浏览器这一步 **没有跨域**（它请求的是 `localhost:9000` 同源）
+      - 跨域那一步变成了 **服务器到服务器通信**（dev-server -> 后端），不受浏览器同源策略限制
+  
+    
+  
+  - `pathRewrite: { '^/api': '' }` 解释
+  
+    - 作用：把请求路径里的 `/api` 前缀去掉后再转发给后端
+    - 例：浏览器请求 `GET /api/users`
+      - 转发到后端时会变成 `GET /users`
+    - 适用场景：
+      - 前端想统一用 `/api` 做前缀（方便区分接口请求）
+      - 但后端真实路由并没有 `/api` 这个前缀
+  
 
 
 
 
 
-## 2.4.historyApiFallback
+- changeOrigin：true  --- 默认就是true
+  - 作用：控制代理在“转发到 `target`”时，是否把请求头中的 `Host` 改成目标后端的 host（某些场景下也会连带影响 `Origin/Referer` 的表现）
+  - 重点：无论 `changeOrigin` 是 `true` 还是 `false`，**代理都会把请求转发到 `target`；差别主要在“代理发给后端的请求头长什么样”**
+  - 把链路分成两跳理解（理解 proxy 的关键）：
+    - 第 1 跳（浏览器 -> webpack-dev-server）
+      - 浏览器请求同源地址，例如：`http://localhost:9000/api/users`
+      - 这一跳不跨域，所以浏览器不会拦截
+    - 第 2 跳（webpack-dev-server -> 后端 target）
+      - 代理把请求转发到 `target`，例如：`http://localhost:8000/users`
+      - 这一跳是**“服务器到服务器”请求，不受浏览器同源策略限制**
+  - `changeOrigin: true`（开发里更常用）
+    - 转发到后端时：**`Host` 会被改成目标后端的 host**
+      - 例：**`target` 是 `http://localhost:8000`，则发给后端的 `Host` 变成 `localhost:8000`**
+    - 常见原因
+      - 很多后端/网关会根据 `Host` 做路由（虚拟主机）或做校验；**如果 `Host` 不符合预期，可能返回 403/404**
+      - 代理到线上域名（如 `https://api.xxx.com`）时通常都需要 `true`
+  - `changeOrigin: false`（少数场景使用）
+    - 转发到后端时：**`Host` 往往保持为代理自身的 host**
+      - 例：**页面在 `http://localhost:9000`，则发给后端可能还是 `Host: localhost:9000`**
+  - 补充：后端（通过Koa/Express/Java 实现）
 
-- true：404 => localhost：3000/index.html
 
 
 
+
+## 2.4.historyApiFallback 
+
+- 一定要配置为true,因为默认为false，上面的changOrign一样要配置
+
+- 总结：要是为true：404 => localhost：3000/index.html
+
+- 实现过程
+
+  - *SPA 项目里* `/a` *往往只是前端路由，不是真实文件。*
+
+  - 而服务器的/a则是去调用和访问真实文件
+    - *开发服务器默认按静态资源处理请求：**当用户刷新* `http://localhost:8000/a`*，浏览器会请求* `GET /a`*，服务器会去找是否存在* `/a` *对应的文件/目录**，找不到就 404。*
+
+  - *配置* `devServer.historyApiFallback: true` *后，如果服务器发现这个路径不是静态资源，就会回退返回* index.html*。*
+
+  - 浏览器拿到 index.html后，前端路由接管，根据 URL /a正确渲染
+    - 解释这句
+      - **没有 historyApiFallback**：服务器说“你要 `/a` 文件？我没有，404”，浏览器显示404
+      - **有 historyApiFallback**：服务器说“我不管你要啥路径，先给你 index.html，剩下交给前端路由决定显示什么”
+
+  ```js
+      devServer: {
+          host: '0.0.0.0',
+          compress: true,
+          port: 9000,
+          open: true,
+          historyApiFallback:true,
+          // 跨域
+          proxy: [
+              {
+                  context: ['/api'],
+                  target: 'http://localhost:8000',
+                  changeOrigin: false,
+                  pathRewrite: {
+                      '^/api': ''
+                  }
+              }
+          ]
+  ```
+
+  
+
+  
+
+  
 
 
 # 三。webpack性能优化

@@ -1,0 +1,20 @@
+{
+  "name": "05_api-server-for04",
+  "version": "1.0.0",
+  "description": "",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1",
+    "dev": "nodemon index.js"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "type": "commonjs",
+  "dependencies": {
+    "koa": "^3.2.0",
+    "koa-bodyparser": "^4.4.1",
+    "koa-router": "^14.0.0",
+    "koa-static": "^5.0.0"
+  }
+}
