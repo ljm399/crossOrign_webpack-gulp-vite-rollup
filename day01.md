@@ -583,6 +583,14 @@ app.listen(port, () => {
 
 
 
+### 平时直接测试使用development，理由
+
+- 因为production为了被反推源码源文件名，所以会出来进行很多丑化，不利于测试
+
+
+
+
+
 # 四。babel核心使用
 
 ## 4.1.babel的作用
@@ -590,7 +598,7 @@ app.listen(port, () => {
 - babel 是什么
 
   - JS 编译器：把“新语法/新特性代码”转换为“目标环境能运行的代码”。
-    - 现在浏览器一般都支持es6，只是为了兼顾老浏览
+    - 现在浏览器一般都支持es6及以上语法，只是为了兼顾老浏览
 
 - 主要解决两类兼容问题
 
@@ -600,6 +608,7 @@ app.listen(port, () => {
   - API（polyfill）
     - 例：`Promise`、`Array.prototype.includes`
     - 这种不只是“语法转换”，需要 polyfill 方案（常用 `core-js`）
+  - react -> 可编译的react代码
 
 - 和 webpack 的分工
 
@@ -608,15 +617,49 @@ app.listen(port, () => {
 
 
 
+
+
 ## 4.2.babel命令行
 
-### 4.2.1. babel安装
+### 4.2.1. babel安装(了解，不是学习则直接看4.2.2)
 
 - npm i -D @babel/core @babel/cli
 - npx babel
   - 因为要是babel -v 则去全局找
-- 安装某个转换插件
-  - npm i @babel/plugin-transform-arrow-functions
+- 安装插件和使用某个转换插件
+  - npm i -D @babel/plugin-transform-arrow-functions
+  - 命令（直接在命令行指定 plugin）
+    - npx babel src --out-dir lib --plugins=@babel/plugin-transform-arrow-functions
+
+- 或者使用webpack配置（用 babel-loader + preset-env）
+
+  - 安装
+    
+    - `npm i -D webpack webpack-cli`
+    - npm i -D babel-loader @babel/core @babel/preset-env
+  - `webpack.config.js`
+  
+    ```js
+    module.exports = {
+      module: {
+        rules: [
+          {
+            test: /\.js$/,
+            exclude: /node_modules/,
+            use: {
+              loader: 'babel-loader',
+              options: {
+    			plugins: [
+                    '@babel/plugin-transform-arrow-functions',
+                    '@babel/plugin-transform-block-scoping'
+                ]
+              }
+            }
+          }
+        ]
+      }
+    };
+    ```
 
 缺点：babel安装需要安装不同插件，然后才能转换的问题
 
@@ -626,55 +669,56 @@ app.listen(port, () => {
 
 ### 4.2.2.预处理
 
-- plugin
-- preset
-
-- `plugin` vs `preset`
-
-  - `plugin`：单个转换规则
-  - `preset`：一组 plugin 的集合（最常用：`@babel/preset-env`）
-
-- 命令行最小安装
+- 安装
 
   - ```bash
-    npm i -D @babel/core @babel/cli @babel/preset-env
+    npm i -D @babel/core @babel/cli @babel/preset-env 
     ```
 
-- 最小配置
+  - npm i -D babel-loader
 
-  - `.babelrc`（或 `babel.config.json`）
+- 命令(当没有下面的配置时用)
 
-    - ```json
-      {
-        "presets": [
-          ["@babel/preset-env", { "targets": "> 0.25%, not dead" }]
+  - npx babel ./src --out-dir ./build --presets=@babel/preset-env
+
+- 使用webpack配置
+
+  - `webpack.config.js`（或 `babel.config.json`）
+
+    ```json
+    module.exports = {
+      module: {
+        rules: [
+          {
+            test: /\.js$/,
+            exclude: /node_modules/,
+            use: {
+              loader: 'babel-loader',
+              options: {
+                presets: [['@babel/preset-env', { targets: 'defaults' }]]
+              }
+            }
+          }
         ]
       }
-      ```
-
-- 编译命令
-
-  - ```bash
-    npx babel src --out-dir lib
+    };
     ```
 
-- 一个“转换前后”示例
+  - 或者直接(多了[],为了添加更多属性，如上所示)
 
-  - `src/index.js`
+    ```js
+    .....
+    use: {
+      loader: 'babel-loader',
+      options: {
+        presets: ['@babel/preset-env']
+      }
+    }
+    ```
 
-    - ```js
-      const add = (a, b) => a + b;
-      ```
+  - 命令
 
-  - 输出（可能变成）
-
-    - ```js
-      "use strict";
-      
-      var add = function add(a, b) {
-        return a + b;
-      };
-      ```
+    - npx webpack
 
 
 
@@ -682,19 +726,15 @@ app.listen(port, () => {
 
 - babel 核心：AST（抽象语法树）
 
-  - parse：源码字符串 -> AST
+  - parse：源码字符串 -> AST    
+    - 解析阶段 
   - transform：遍历 AST，应用 plugin/preset 做转换
+    - 转换阶段
   - generate：AST -> 新代码
+    - 生成阶段
+  - 每个编译器一般都会经过上面三个阶段
+  - 想学习转换思路可以看
+    - https://github.com/jamiebuilds/the-super-tiny-compiler/blob/master/the-super-tiny-compiler.js
 
-- 最小示意（理解用）
-
-  - ```js
-    const { transformSync } = require('@babel/core');
-    
-    const { code } = transformSync('const add = (a,b)=>a+b', {
-      presets: [['@babel/preset-env', { targets: 'defaults' }]]
-    });
-    
-    console.log(code);
-    ```
+  
 
