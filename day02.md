@@ -504,7 +504,7 @@ webpack 的意思是：
 
 - webpack.config.js配置
 
-  - 使用刚刚安装的HtmlWebpackPlugin
+  - 使用刚刚安装的HtmlWebpackPlugin(不是只适用于react，这里有无方便测试，所以使用这个属性，可以自定义html模板)
     
   - 配置（示意）
   
@@ -1069,4 +1069,16 @@ export const add = ...
 
 # 三。webpack性能优化
 
-- 介绍
+- 结果性能优化
+
+  - 分包处理
+  - 代码丑化（简化）
+    - var message == 》var m
+
+  - CDN服务器加载静态资源，而不是本地加载静态资源
+  - tree shaking(删除无用的代码)
+
+- 打包速度性能优化
+
+  - cash
+    - 看看之前有无打包过，就不要下载
