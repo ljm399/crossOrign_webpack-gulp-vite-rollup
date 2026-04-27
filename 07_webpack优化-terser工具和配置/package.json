@@ -1,0 +1,47 @@
+{
+  "name": "practice07-terser",
+  "version": "1.0.0",
+  "description": "",
+  "license": "ISC",
+  "author": "",
+  "type": "commonjs",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1",
+    "webpack": "webpack",
+    "build": "webpack --mode production",
+    "build:prod": "webpack --mode production",
+    "tsc-check": "tsc --noEmit",
+    "tsc-watch": "tsc --noEmit --watch",
+    "dev": "webpack serve"
+  },
+  "devDependencies": {
+    "@babel/cli": "^7.28.6",
+    "@babel/core": "^7.29.0",
+    "@babel/preset-env": "^7.29.2",
+    "@babel/preset-react": "^7.28.5",
+    "@babel/preset-typescript": "^7.28.5",
+    "babel-loader": "^10.1.1",
+    "copy-webpack-plugin": "^14.0.0",
+    "css-loader": "^7.1.4",
+    "css-minimizer-webpack-plugin": "^8.0.0",
+    "html-webpack-plugin": "^5.6.7",
+    "mini-css-extract-plugin": "^2.10.2",
+    "style-loader": "^4.0.0",
+    "terser": "^5.27.0",
+    "terser-webpack-plugin": "^5.4.0",
+    "ts-loader": "^9.5.7",
+    "typescript": "^6.0.3",
+    "webpack": "^5.106.2",
+    "webpack-cli": "^7.0.2",
+    "webpack-dev-server": "^5.2.3"
+  },
+  "dependencies": {
+    "axios": "^1.15.2",
+    "core-js": "^3.49.0",
+    "pnpm": "^10.33.2",
+    "react": "18.2.0",
+    "react-dom": "18.2.0",
+    "regenerator-runtime": "^0.14.1"
+  }
+}
