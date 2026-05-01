@@ -1,0 +1,12 @@
+{
+  "type": "object",
+  "properties": {
+    "hyprefix": {
+      "type": "string"
+    },
+    "numb":{
+      "type": "number"
+    }
+  },
+  "additionalProperties": false
+}

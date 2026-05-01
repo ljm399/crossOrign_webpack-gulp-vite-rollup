@@ -1,0 +1,16 @@
+{
+  "name": "20_webpack-tapable库的使用",
+  "version": "1.0.0",
+  "description": "",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "packageManager": "pnpm@10.33.2",
+  "dependencies": {
+    "tapable": "^2.3.3"
+  }
+}
