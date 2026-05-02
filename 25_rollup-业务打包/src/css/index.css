@@ -1,0 +1,12 @@
+body {
+  margin: 0;
+  padding: 0;
+  background: greenyellow;
+}
+
+.title {
+  color: blue;
+  user-select: none;
+  font-size: 20px;
+  padding: 16px;
+}
