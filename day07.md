@@ -509,8 +509,29 @@ pnpm exec rollup -c
 - **想“按项目约定的方式开发/打包”**：用 `pnpm run dev` / `pnpm run build`
 - **想“临时手动跑 rollup”**：用 `pnpm exec rollup -c`（或加 `-w`）
 
-
 # 二。vite工具的使用
+
+## 配置package.json
+
+- 配置package.json和执行命令
+
+  - package.json
+
+    ```json
+    {
+      "scripts": {
+        "dev": "vite",
+        "build": "vite build",
+        "preview": "vite preview"
+      }
+    }
+    ```
+
+  - 执行命令
+
+    ```bash
+    pnpm run dev -- --open
+    ```
 
 ## 2.1.vite的核心思想
 
@@ -565,6 +586,7 @@ vite 的核心思路可以概括为：
     - 兼容性处理（目标浏览器不完全支持某些语法/特性）
 - **[Vite 不是“完全不打包”]**
   - 只是 **开发阶段尽量不做全量 bundle**，生产构建依旧是打包。
+- **当你安装好某个插件，一般不需要想webpack一样还要配置，vite自动帮你配置了**
 
 
 
@@ -654,14 +676,8 @@ vite 的核心思路可以概括为：
 
   - 命令
 
-    ```bash
-    # 1. 创建项目（选择 vanilla + ts 或者你需要的框架 + ts）
-    pnpm create vite
-    
-    # 2. 进入项目后安装依赖
-    pnpm i
-    ```
-
+    - pnpm i vite
+  
 - 执行命令
 
   - 命令
@@ -771,17 +787,251 @@ vite 的核心思路可以概括为：
 
 ## 2.4.vite搭建vue/react项目
 
+### 处理vue
+
+- 安装
+
+  - 命令（这是开发项目执行的命令就是脚手架）
+
+    ```bash
+    # 创建项目（选择 vue）
+    pnpm create vite
+    
+    # 安装依赖
+    pnpm i
+    ```
+
+  - 测试安装的命令
+
+    ```bash
+    # 两套运行时
+    pnpm add vue 
+     
+    # 两个 Vite 插件
+    pnpm add -D @vitejs/plugin-vue 
+    ```
+
+
+- 配置
+
+  - vite.config.js
+
+    ```js
+    import { defineConfig } from 'vite';
+    import vue from '@vitejs/plugin-vue';
+    
+    export default defineConfig({
+      plugins: [vue()]
+    });
+    ```
+
+    - 说明
+      - `@vitejs/plugin-vue` 负责把 `.vue` 单文件组件（SFC）转换成浏览器能运行的 JS 模块
+
+    
+
+- 使用
+
+  - src/vue/app.vue
+
+    ```vue
+    <template>
+      <div class="app">
+        <h2 class="title">Hello Vite + Vue</h2>
+        <p>count: {{ count }}</p>
+        <button @click="count++">+</button>
+      </div>
+    </template>
+
+    <script setup>
+    import { ref } from 'vue';
+
+    const count = ref(0);
+    </script>
+
+    <style scoped>
+    .title {
+      user-select: none;
+    }
+    </style>
+    ```
+
+  - 导入
+    - index.js
+
+      ```js
+      import { createApp } from 'vue';
+      import App from './vue/app.vue';
+      
+      createApp(App).mount('#app');
+      ```
+
+- 效果：
+
+  - 你在 Network 里可能会看到请求 `.vue` 相关的资源（或类似 `?vue&type=...` 的请求）。
+  - 点开 Preview/Response 会发现内容已经是 JS（render 函数/模块代码），说明 `.vue` 在 dev server 端被插件即时编译后返回。
+
+
+
+
+### 处理React
+
+- 安装命令
+
+  - 命令（这是开发react安装命令,就是脚手架）
+
+    ```bash
+    # 创建项目（选择 react 或 react-ts）
+    pnpm create vite
+    
+    # 安装依赖
+    pnpm i
+    ```
+
+    - 说明
+      - 选择 `react` 会得到 jsx 版本
+      - 选择 `react-ts` 会得到 tsx 版本
+
+  - 测试安装命令
+
+    ```bash
+    # 两套运行时
+    pnpm add react react-dom
+    
+    # 两个 Vite 插件
+    pnpm add -D @vitejs/plugin-react
+    ```
+
+    
+
+- 使用
+  - src/React/APP.jsx
+
+    ```jsx
+    export default function App() {
+      return (
+        <div>
+          <h2>Hello Vite + React</h2>
+          <p>JSX works</p>
+        </div>
+      );
+    }
+    ```
+
+  - index.js要改为jsx
+    - 原因
+
+      - React 组件里写的是 JSX 语法，虽然 Vite 能处理，但从规范/语义上更推荐用 `.jsx`（或 `.tsx`）来承载 JSX。
+      - 同时很多编辑器/格式化/类型提示会根据扩展名决定是否启用 JSX 相关能力。
+
+    - 导入
+
+      - index.jsx
+
+        ```jsx
+        import React from 'react';
+        import ReactDOM from 'react-dom/client';
+        import App from './React/APP.jsx';
+        
+        ReactDOM.createRoot(document.getElementById('root')).render(
+          <React.StrictMode>
+            <App />
+          </React.StrictMode>
+        );
+        ```
+
+  - index.html
+
+    ```html
+    添加
+    <div id='root'></div>
+    ```
+
+  - vite.config.js
+
+    ```js
+    import { defineConfig } from 'vite';
+    import vue from '@vitejs/plugin-vue';
+    import react from '@vitejs/plugin-react';
+    
+    export default defineConfig({
+      plugins: [vue(), react()]
+    });
+    ```
+
+- 注意 
+
+  - 确保 `index.html` 里挂载点 id 和入口文件对应
+    - 例如：`<div id="root"></div>` + `<script type="module" src="/src/index.jsx"></script>`
+  - React 18 的入口推荐使用 `react-dom/client` 的 `createRoot`
+
 
 
 
 
 ## 2.5.vite脚手架的使用
 
+### vue的使用
 
+- vite脚手架的使用这个目录执行
+
+  ```bash
+  # 创建项目（选择 vue，project_name记得写vue_project）
+  pnpm create vite
+  
+  # 安装依赖
+  pnpm i
+  ```
+
+### react的使用
+
+- 也是在vite脚手架的使用这个目录执行
+
+  ```bash
+  # 创建项目（选择 react，project_name记得写vue_project）
+  pnpm create vite
+  
+  # 安装依赖
+  pnpm i
+  ```
+
+  
 
 
 
 ## 2.6.ESBuild原理解析
+
+#### 阶段总结:开发 -> 构建/打包 -> 预览/上线
+
+
+
+- 更准确说：在 Vite 里 esbuild 主要参与两块
+  - **开发阶段**：
+    - 依赖预构建（把 `node_modules` 里常见的 CJS/UMD 依赖转成 ESM，并做缓存）
+    - TS/JSX 等的快速转译（按模块请求即时转换）
+  - **构建阶段**/**打包阶段**：
+    - Vite 的 `build` 底层是 Rollup，但会在某些环节用 esbuild 做非常快的转译/压缩（取决于配置/版本）
+
+- 因为底层是go语言，所以编译速度快
+  - 这里更严谨的说法是：
+    - esbuild 是 **Go 编写** 的工具，编译成原生可执行程序（native binary），启动和执行都很快
+    - “快”不主要是因为“编译为字节码”（这个说法更像 Java/JS 引擎的概念），而是因为：
+      - 解析器/代码生成器用 Go 实现，性能高
+      - esbulid默认大量使用并发（多核）处理
+      - esbuild对常见场景（TS/JSX 转译、压缩、依赖扫描）做了很多工程优化
+
+- 其他
+
+  - esbuild 擅长什么
+    - TS/JSX 的 **转译**（transpile）
+    - 非常快的 minify（压缩）
+    - 依赖扫描/预构建
+
+  - Vite 为什么是 Rollup + esbuild 的组合
+    - 开发阶段追求“响应快”：用 esbuild 做预构建/快速转译
+    - 生产构建追求“产物质量”：用 Rollup 做 tree-shaking、代码分割、插件生态、产物控制
+
+    
 
 
 
