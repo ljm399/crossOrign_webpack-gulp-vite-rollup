@@ -527,11 +527,32 @@ pnpm exec rollup -c
     }
     ```
 
-  - 执行命令
+    - **A：`pnpm run build` 之后，直接双击打开 `dist/index.html`（file 协议）**
 
-    ```bash
-    pnpm run dev -- --open
-    ```
+    - **B：`pnpm run preview` 通过 Vite 起的静态服务器（http 协议）**
+  
+    - ###### 1) `file://` 直接打开会触发浏览器限制（尤其是模块/资源加载）
+  
+      Vite 构建后的 `dist/index.html` 里会引用：
+  
+      - `./assets/index-xxx.js`
+      - `./assets/style-xxx.css`
+  
+      当你用 **file 协议**打开时，不同浏览器对：
+  
+      - `type="module"` 模块脚本
+      - 跨文件读取
+      - 路径解析/缓存
+  
+      限制和行为会不一致，常见现象：
+  
+      - 模块脚本被拦截
+      - 控制台报 CORS / origin null
+      - 某些资源加载失败或路径表现异常
+  
+      而 `pnpm run preview` 是 **[http://localhost:xxxx**，浏览器就按正常](http://localhost:xxxx**，浏览器就按正常/) Web 服务处理资源加载，行为更接近真实线上。
+  
+    - 所以推荐使用pnpm run preview
 
 ## 2.1.vite的核心思想
 
@@ -1020,51 +1041,18 @@ vite 的核心思路可以概括为：
       - esbulid默认大量使用并发（多核）处理
       - esbuild对常见场景（TS/JSX 转译、压缩、依赖扫描）做了很多工程优化
 
-- 其他
+- esbuild 擅长什么
+  - TS/JSX 的 **转译**（transpile）
+  - 非常快的 minify（压缩）
+  - 依赖扫描/预构建
 
-  - esbuild 擅长什么
-    - TS/JSX 的 **转译**（transpile）
-    - 非常快的 minify（压缩）
-    - 依赖扫描/预构建
+- Vite 为什么是 Rollup + esbuild 的组合
+  - 开发阶段追求“响应快”：用 esbuild 做预构建/快速转译
+  - 生产构建追求“产物质量”：用 Rollup 做 tree-shaking、代码分割、插件生态、产物控制
 
-  - Vite 为什么是 Rollup + esbuild 的组合
-    - 开发阶段追求“响应快”：用 esbuild 做预构建/快速转译
-    - 生产构建追求“产物质量”：用 Rollup 做 tree-shaking、代码分割、插件生态、产物控制
-
-    
+  
 
 
 
 
-
-# 三。whycli脚手架开发
-
-## 3.1.脚手架是实现的原理
-
-
-
-
-
-## 3.2.version/options
-
-
-
-
-
-## 3.3.whycli create功能
-
-
-
-
-
-## 3.4.whycli addcpn功能
-
-
-
-
-
-# 四。后台管理系统接口
-
-- 那个图片之后截图
-  - 标识符是角色接口和菜单接口
 

@@ -1,0 +1,21 @@
+{
+  "name": "28_test",
+  "version": "1.2.0",
+  "description": "",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "bin": {
+    "whycli": "./lib/index.js"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "packageManager": "pnpm@10.33.2",
+  "dependencies": {
+    "commander": "^14.0.3",
+    "download-git-repo": "^3.0.2",
+    "ejs": "^3.1.10"
+  }
+}

@@ -1,0 +1,38 @@
+:root {
+  --primary-color: #ff9854;
+  --van-primary-color: var(--primary-color);
+
+  /* 全局修改：任何地方只要用到--van-tabbar-item-icon-size 都会被修改掉 */
+  /* --van-tabbar-item-icon-size: 30px !important; */
+  /*  搜索框的颜色 */
+  --van-search-left-icon-color: var(--primary-color) !important;
+  --line-color: #f8f8f8;
+  --theme-linear-gradient: linear-gradient(90deg, #fa8c1d, #fcaf3f);
+  --van-nav-bar-title-text-color: var(--primary-color) !important;
+  --van-rate-icon-full-color: var(--van-primary-color) !important;
+  --van-tab-active-text-color: var(--van-primary-color) !important;
+  line-height: 1;
+}
+body {
+  font-size: 14px;
+}
+
+.top-page {
+  /* 默认是static ，但是设置不了z-index */
+  position: relative;
+  /* 默认的 tabBar 的z-index 应该是 1，所以这里设置为 9 */
+  z-index: 9;
+  height: 100vh;
+  background-color: #fff;
+  /* 只在div里滚动，不在整个 page 滚动，就会把下面的tabBar隐藏了 */
+  overflow-y: scroll;
+}
+.border-gray-line {
+  border-bottom: 1px solid var(--line-color);
+}
+.icon_check {
+  display: inline-block;
+  width: 25px;
+  height: 25px;
+  background: url(../img/detail/icon_check.png) 50% 70% / 50% no-repeat;
+}
