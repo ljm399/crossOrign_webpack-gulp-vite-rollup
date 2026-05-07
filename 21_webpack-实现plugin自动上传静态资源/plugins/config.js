@@ -4,7 +4,7 @@ module.exports = {
     port: 22,
     username: 'root'
   },
-  PASSWORD: 'Caomai123',
+  PASSWORD: 'XX',
   REMOTE_PATH: '/usr/share/nginx/html/webpack'
 };
 
